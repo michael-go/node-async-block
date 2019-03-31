@@ -74,6 +74,31 @@ app.get('/compute-with-set-immediate', async function computeWSetImmediate(req, 
   res.send(hash.digest('hex') + '\n');
 });
 
+app.get('/compute-with-set-immediate-closure', function computeWSetImmediate(req, res) {
+    function asyncUpdateHash(n, doneCB) {
+        const hash = crypto.createHash('sha256');
+        // Update ongoing hash in JS closure.
+        function updateHash(i, cb) {
+            hash.update(randomString());
+            if (i == n) {
+                cb(hash);
+                return;
+            }
+
+            // "Asynchronous recursion".
+            // Schedule next operation asynchronously.
+            setImmediate(updateHash.bind(null, i+1, cb));
+        }
+
+        // Start the helper, with CB to call doneCB.
+        updateHash(1, doneCB);
+    }
+
+    asyncUpdateHash(10e6, function(hash){
+        res.send(hash.digest('hex') + '\n');
+    });
+});
+
 app.get('/compute-with-next-tick', async function computeWNextTick (req, res) {
   log('computing async with nextTick!');
 
