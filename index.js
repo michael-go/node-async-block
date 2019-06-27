@@ -40,6 +40,30 @@ app.get('/compute-async', async function computeAsync(req, res) {
   res.send(hash.digest('hex') + '\n');
 });
 
+app.get('/compute-with-promises', function computeWPromises(req, res) {
+  log('computing with promises!');
+
+  const hash = crypto.createHash('sha256');
+
+  const updatePromise = () => new Promise((resolve) =>{
+     hash.update(randomString())
+     resolve();
+  });
+
+  let i = 0;
+
+  const loop = () => {
+    if (i < 10e6) {
+      i++;
+      updatePromise().then(loop);
+    } else {
+      res.send(hash.digest('hex') + '\n');
+    }
+  }
+
+  loop();
+});
+
 app.get('/compute-with-set-timeout', async function computeWSetTimeout (req, res) {
   log('computing async with setTimeout!');
 
