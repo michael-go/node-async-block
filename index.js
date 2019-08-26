@@ -1,6 +1,8 @@
 const express = require('express');
 const crypto = require('crypto');
 
+const {eventLoopSpinner} = require('./event-loop-spinner');
+
 const PID = process.pid;
 
 function log(msg) {
@@ -94,6 +96,19 @@ app.get('/compute-with-set-immediate', async function computeWSetImmediate(req, 
   for (let i = 0; i < 10e6; i++) {
     hash.update(randomString());
     await setImmediatePromise()
+  }
+  res.send(hash.digest('hex') + '\n');
+});
+
+app.get('/compute-with-spinner', async function computeWSetImmediate(req, res) {
+  log('computing async with event-loop-spinner!');
+
+  const hash = crypto.createHash('sha256');
+  for (let i = 0; i < 10e6; i++) {
+    hash.update(randomString());
+    if (eventLoopSpinner.isStarving()) {
+      await eventLoopSpinner.spin();
+    }
   }
   res.send(hash.digest('hex') + '\n');
 });
